@@ -85,23 +85,50 @@ app.post("/login", async (req, res) => {
 
 // ── POST /unlock ───────────────────────────────────────────────────────
 app.post("/unlock", async (req, res) => {
- const { bikeId } = req.body;
-const studentId = 1;
+  const { bikeId, studentId } = req.body;
+
   if (!studentId || !bikeId) {
     return res.status(400).json({ error: "studentId and bikeId are required" });
   }
 
   try {
-    // Check bike exists and is available
     const [bikes] = await pool.query(
       "SELECT bike_id, status, station_id FROM Bike WHERE bike_id = ?",
       [bikeId]
     );
 
-    if (bikes.length === 0) return res.status(404).json({ error: "Bike not found" });
+    if (bikes.length === 0) {
+      return res.status(404).json({ error: "Bike not found" });
+    }
+
     if (bikes[0].status !== "available") {
       return res.status(400).json({ error: `Bike #${bikeId} is not available` });
     }
+
+    const [active] = await pool.query(
+      "SELECT ride_id FROM Ride WHERE student_id = ? AND end_time IS NULL",
+      [studentId]
+    );
+
+    if (active.length > 0) {
+      return res.status(400).json({ error: "You already have an active ride" });
+    }
+
+    const stationId = bikes[0].station_id || 1;
+
+    const [result] = await pool.query(
+      "INSERT INTO Ride (student_id, bike_id, start_station_id, start_time) VALUES (?, ?, ?, NOW())",
+      [studentId, bikeId, stationId]
+    );
+
+    console.log(`🚲 Ride started: ID=${result.insertId}, Bike=${bikeId}, Student=${studentId}`);
+    res.json({ rideId: result.insertId });
+  } catch (err) {
+    console.error("POST /unlock error:", err.message);
+    res.status(500).json({ error: "Failed to unlock bike" });
+  }
+});
+
 
     // Check student has no active ride
     const [active] = await pool.query(

@@ -36,18 +36,20 @@ function App() {
   };
 
   // ─── Fetch bikes from backend; fall back to mock data ───────────────────
-  const fetchBikes = async () => {
-    try {
-      const res  = await fetch(`${API_URL}/bikes`);
-      const data = await res.json();
-      setBikes(data);
-      setBackendOff(false);
-    } catch {
-      // Backend offline → use mock data so UI is always demonstrable
-      setBikes(MOCK_BIKES);
-      setBackendOff(true);
-    }
-  };
+  const fetchBikes = async (showMessage = false) => {
+  try {
+    const res = await fetch(`${API_URL}/bikes`);
+    const data = await res.json();
+    setBikes(data);
+    setBackendOff(false);
+    if (showMessage) notify("Bike list refreshed", "success");
+  } catch {
+    setBikes(MOCK_BIKES);
+    setBackendOff(true);
+    if (showMessage) notify("Backend offline. Showing demo bikes.", "info");
+  }
+};
+
 
   useEffect(() => { fetchBikes(); }, []);
 

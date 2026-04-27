@@ -4,8 +4,13 @@ function BikeCard({ bike, unlockBike, hasActiveRide, loading }) {
 
   // ─── Battery color based on level ──────────────────────────────────────
   const batteryColor =
-    bike.batteryLevel >= 60 ? "#22c55e" :
-    bike.batteryLevel >= 30 ? "#f59e0b" : "#ef4444";
+  bike.batteryLevel >= 60 ? "#22c55e" :
+  bike.batteryLevel >= 30 ? "#f59e0b" : "#ef4444";
+
+const batteryText =
+  bike.batteryLevel >= 60 ? "Good Battery" :
+  bike.batteryLevel >= 30 ? "Low Battery" : "Very Low Battery";
+
 
   // ─── Status styling ─────────────────────────────────────────────────────
   const statusClass =
@@ -16,7 +21,12 @@ function BikeCard({ bike, unlockBike, hasActiveRide, loading }) {
     bike.status === "Available"   ? "✅" :
     bike.status === "In-Use"      ? "🔒" : "🔧";
 
-  const canUnlock = bike.status === "Available" && !hasActiveRide && !loading;
+  const canUnlock =
+  bike.status === "Available" &&
+  bike.batteryLevel > 20 &&
+  !hasActiveRide &&
+  !loading;
+
 
   return (
     <div className={`bike-card ${bike.status === "Available" ? "bike-card-available" : ""}`}>
@@ -59,6 +69,17 @@ function BikeCard({ bike, unlockBike, hasActiveRide, loading }) {
           />
         </div>
       </div>
+      <div className="battery-label-row">
+  <span className="battery-label">Battery</span>
+  <span className="battery-pct" style={{ color: batteryColor }}>
+    {bike.batteryLevel}%
+  </span>
+</div>
+
+<p style={{ color: batteryColor, fontSize: "0.85rem", fontWeight: "600", marginTop: "4px" }}>
+  {batteryText}
+</p>
+
 
       {/* ── Unlock Button ────────────────────────────────────────────── */}
       {canUnlock ? (
@@ -76,6 +97,11 @@ function BikeCard({ bike, unlockBike, hasActiveRide, loading }) {
         <button className="unlock-btn-disabled" disabled>
           🔒 Currently In Use
         </button>
+        ) : bike.status === "Available" && bike.batteryLevel <= 20 ? (
+  <button className="unlock-btn-disabled" disabled>
+    Battery Too Low
+  </button>
+
       ) : (
         <button className="unlock-btn-disabled" disabled>
           🔧 Under Maintenance
